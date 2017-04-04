@@ -281,6 +281,123 @@ END
 ##################################################################################################   
 GP1IP001 - subprograma de inclusao de carro - OK
 ################################################################################################## 
+DEFINE DATA PARAMETER                               
+1 PERSONNEL-ID (A8)                                 
+1 FIRST-NAME (A20)                                  
+LOCAL USING GP1LVEH0                                
+LOCAL                                               
+1 #PROGRAMA (A8) INIT<*PROGRAM>                     
+1 #OPCAO (A1)                                       
+1 #DATA (A10)                                       
+1 REDEFINE #DATA                                    
+  2 #DIA(A2)                                        
+  2 FILLER 1X                                       
+  2 #MES (A2)                                       
+  2 FILLER 1X                                       
+  2 #ANO (A4)                                       
+1 #DATA-N (N8)                                      
+1 REDEFINE #DATA-N                                  
+  2 #ANO-N (N4)                                     
+  2 #MES-N (N2)                                     
+  2 #DIA-N (N2)                                     
+1 #DATA8 (A8)                                       
+END-DEFINE                                          
+DEFINE WINDOW WIN                                   
+  SIZE AUTO                                         
+  BASE 10/20                                        
+  TITLE 'PERGUNTA'                                  
+  CONTROL WINDOW                                    
+  FRAMED ON                                         
+*                                                   
+*                                                   
+*                                                   
+SET KEY ALL                                         
+REPEAT                                              
+  INPUT USING MAP 'GP1IM001'                        
+  MOVE PERSONNEL-ID TO CAR.PERSONNEL-ID             
+  PERFORM CHECKPF                                   
+  PERFORM CONSISTCAR                                
+  MOVE #DATA-N TO DATE-ACQ                          
+  INPUT WINDOW = 'WIN' USING MAP 'GP1IM013'         
+  DECIDE ON FIRST VALUE OF #OPCAO                   
+    VALUE 'N'                                                
+      FETCH 'GP1IP000'                                       
+    VALUE 'S'                                                
+      STORE CAR                                              
+      END TRANSACTION                                        
+      FETCH 'GP1IP000'                                       
+    NONE                                                     
+      REINPUT 'Opcao Invalida' MARK *#OPCAO                  
+  END-DECIDE                                                 
+END-REPEAT                                                   
+*                                                            
+DEFINE SUBROUTINE CONSISTCAR                                 
+IF CHASSIS-NUM LT 1                                          
+  REINPUT 'Chassi deve ser maior que 0' MARK *CHASSIS-NUM    
+END-IF                                                       
+IF MAKE EQ ' '                                               
+  REINPUT 'Marca nao pode ser vazia' MARK *MAKE              
+END-IF                                                       
+IF MODEL EQ ' '                                              
+  REINPUT ' Campo nao pode ser vazio' MARK *MODEL            
+END-IF                                                       
+IF MODEL EQ ' '                                              
+  REINPUT ' Campo nao pode ser vazio' MARK *MODEL            
+END-IF                                                       
+IF COLOR EQ ' '                                              
+  REINPUT ' Cor nao pode ser vazio' MARK *COLOR              
+END-IF                                                       
+IF YEAR LT 1990                                              
+  REINPUT ' Nao pode ser menor que 1990' MARK *YEAR          
+END-IF                                                       
+IF CLASS EQ ' '                                              
+  REINPUT ' Campo nao pode ser vazio' MARK *CLASS            
+END-IF                                                       
+IF MAINT-COST(1) LT 1                                        
+  REINPUT ' Campo deve ser maior que 0' MARK *MAINT-COST(1)  
+END-IF                                                       
+IF #DATA NE MASK(NN'/'NN'/'NNNN)                             
+  REINPUT ' Data Invalida Modelo DD/MM/AAAA' MARK *#DATA     
+END-IF                                                       
+END-IF                                                           
+IF CLASS EQ ' '                                                  
+  REINPUT ' Campo nao pode ser vazio' MARK *CLASS                
+END-IF                                                           
+IF MAINT-COST(1) LT 1                                            
+  REINPUT ' Campo deve ser maior que 0' MARK *MAINT-COST(1)      
+END-IF                                                           
+IF #DATA NE MASK(NN'/'NN'/'NNNN)                                 
+  REINPUT ' Data Invalida Modelo DD/MM/AAAA' MARK *#DATA         
+END-IF                                                           
+ASSIGN #DIA-N = VAL(#DIA)                                        
+ASSIGN #MES-N = VAL(#MES)                                        
+ASSIGN #ANO-N = VAL(#ANO)                                        
+IF (#DIA-N GT 31) OR (#DIA-N LT 1)                               
+  REINPUT ' Dia Invalido' MARK *#DATA                            
+END-IF                                                           
+IF (#MES-N GT 12) OR (#MES-N LT 1)                               
+  REINPUT ' Mes Invalido' MARK *#DATA                            
+END-IF                                                           
+IF (#MES-N EQ 2) AND (#DIA-N GT 29)                              
+  REINPUT ' Dia Invalido para o Mes de Fevereiro' MARK *#DATA    
+END-IF                                                           
+END-SUBROUTINE                                                   
+DEFINE SUBROUTINE CHECKPF                                        
+IF *PF-KEY = 'PF3'                                               
+  FETCH 'MAN0PFT1'                                               
+END-IF                                                           
+IF *PF-KEY = 'PF12'                                              
+  CALL 'LOGOFF'                                                  
+END-IF                                                           
+IF *PF-KEY = 'PF9'                                               
+  FETCH 'GP1MP000'                                               
+END-IF                                                           
+IF *PF-KEY = 'PF11'                                              
+  FETCH 'MAN0PFT1'                                               
+END-IF                                                           
+END-SUBROUTINE                                                   
+*                                                                
+END                                                                
 ##################################################################################################   
  GP1AP000 - programa da alteracao - OK
 ################################################################################################## 
@@ -295,7 +412,163 @@ GP1IP001 - subprograma de inclusao de carro - OK
 ################################################################################################## 
 ##################################################################################################   
  GP1CP001 - subprograma dos reusultados da consulta - OK
-################################################################################################## 
+##################################################################################################
+DEFINE DATA PARAMETER                                 
+1 #TIPOCONSULTA (A40)                                 
+1 #OPCAO (N1)                                         
+1 #BUSCAR (A20)                                       
+LOCAL USING GP1LEMP0                                  
+LOCAL                                                 
+1 #PROGRAMA (A8) INIT<*PROGRAM>                       
+1 #INIT (N2)                                          
+1 #FIM (N2)                                           
+1 #TOTALRESULTADOS (N2) INIT<0>                       
+*                                                     
+1 #MOSTRANDO (N2/10)                                  
+1 #I (P2)                                             
+1 #START (N7) INIT<1>                                 
+1 #START1 (N7) INIT<1>                                
+1 #START2 (N7) INIT<1>                                
+1 #START3 (N7) INIT<1>                                
+1 #AUX (N7)                                           
+1 #ID (N2)                                            
+*                                                     
+*                                                     
+1 #LISTA-ID (N8/99)                                   
+1 #LISTA-ISN (P8/99)                                  
+1 #LISTA-PERSONNEL-ID (A8/99)                         
+1 #LISTA-FIRST-NAME (A20/99)                          
+1 #LISTA-NAME (A20/99)                                
+1 #CONTADOR (N5) INIT<1>                              
+*                                                     
+END-DEFINE                                            
+* DISPLAY #TIPOCONSULTA #OPCAO #BUSCAR                
+SET KEY ALL                                           
+DECIDE ON FIRST VALUE OF #OPCAO                       
+  VALUE 1                                             
+    FIND(99) EMP WITH PERSONNEL-ID = #BUSCAR          
+      #LISTA-ID (#CONTADOR) := #CONTADOR              
+      #LISTA-ISN(#CONTADOR) := *ISN                   
+      #LISTA-PERSONNEL-ID(#CONTADOR) := PERSONNEL-ID  
+      #LISTA-FIRST-NAME(#CONTADOR) := FIRST-NAME      
+      #LISTA-NAME(#CONTADOR) := NAME                  
+      #TOTALRESULTADOS := #CONTADOR                      
+      ADD 1 TO #CONTADOR                                 
+    END-FIND                                             
+  VALUE 2                                                
+    FIND(99) EMP WITH NAME = #BUSCAR                     
+      #LISTA-ID (#CONTADOR) := #CONTADOR                 
+      #LISTA-ISN(#CONTADOR) := *ISN                      
+      #LISTA-PERSONNEL-ID(#CONTADOR) := PERSONNEL-ID     
+      #LISTA-FIRST-NAME(#CONTADOR) := FIRST-NAME         
+      #LISTA-NAME(#CONTADOR) := NAME                     
+      #TOTALRESULTADOS := #CONTADOR                      
+      ADD 1 TO #CONTADOR                                 
+    END-FIND                                             
+  VALUE 3                                                
+    FIND(99) EMP WITH DEPT = #BUSCAR                     
+      #LISTA-ID (#CONTADOR) := #CONTADOR                 
+      #LISTA-ISN(#CONTADOR) := *ISN                      
+      #LISTA-PERSONNEL-ID(#CONTADOR) := PERSONNEL-ID     
+      #LISTA-FIRST-NAME(#CONTADOR) := FIRST-NAME         
+      #LISTA-NAME(#CONTADOR) := NAME                     
+      #TOTALRESULTADOS := #CONTADOR                      
+      ADD 1 TO #CONTADOR                                 
+    END-FIND                                             
+  VALUE 4                                                
+    FIND(99) EMP WITH JOB-TITLE = #BUSCAR                
+      #LISTA-ID (#CONTADOR) := #CONTADOR                 
+      #LISTA-ISN(#CONTADOR) := *ISN                      
+      #LISTA-PERSONNEL-ID(#CONTADOR) := PERSONNEL-ID     
+      #LISTA-FIRST-NAME(#CONTADOR) := FIRST-NAME         
+      #LISTA-NAME(#CONTADOR) := NAME                     
+      #TOTALRESULTADOS := #CONTADOR                      
+      ADD 1 TO #CONTADOR                                 
+    END-FIND                                             
+  NONE                                                   
+    WRITE ' Codigo Invalido'                             
+END-DECIDE                                               
+*                                                        
+REPEAT                                                   
+  INPUT USING MAP 'GP1CM011'                             
+  PERFORM CHECKPF                               
+  PERFORM CHECKID                               
+END-REPEAT                                      
+*                                               
+*                                               
+DEFINE SUBROUTINE CHECKPF                       
+IF *PF-KEY = 'PF3'                              
+  FETCH 'MAN0PFT1'                              
+END-IF                                          
+IF *PF-KEY = 'PF12'                             
+  PERFORM PF12ROT                               
+END-IF                                          
+IF *PF-KEY = 'PF7'                              
+  IF #START GT 10                               
+    SUBTRACT 10 FROM #START                     
+    SUBTRACT 10 FROM #START1                    
+    SUBTRACT 10 FROM #START2                    
+    SUBTRACT 10 FROM #START3                    
+  END-IF                                        
+END-IF                                          
+IF *PF-KEY = 'PF8'                              
+  #AUX := (#TOTALRESULTADOS - 10)               
+  IF #AUX GT #START                             
+    ADD 10 TO #START                            
+    ADD 10 TO #START1                           
+    ADD 10 TO #START2                           
+    ADD 10 TO #START3                           
+  END-IF                                        
+END-IF                                          
+IF *PF-KEY = 'PF9'                              
+  FETCH 'GP1MP000'                              
+END-IF                                          
+IF *PF-KEY = 'PF11'                             
+  FETCH 'GP1CP000'                              
+END-IF                                          
+END-SUBROUTINE                                  
+DEFINE SUBROUTINE CHECKID                       
+IF (#ID GT 0) AND (#ID LT (#TOTALRESULTADOS+1)) 
+  CALLNAT 'GP1CP002' #LISTA-ISN(#ID)            
+  FETCH 'MAN0PFT1'                                 
+END-IF                                             
+IF *PF-KEY = 'PF12'                                
+  PERFORM PF12ROT                                  
+END-IF                                             
+IF *PF-KEY = 'PF7'                                 
+  IF #START GT 10                                  
+    SUBTRACT 10 FROM #START                        
+    SUBTRACT 10 FROM #START1                       
+    SUBTRACT 10 FROM #START2                       
+    SUBTRACT 10 FROM #START3                       
+  END-IF                                           
+END-IF                                             
+IF *PF-KEY = 'PF8'                                 
+  #AUX := (#TOTALRESULTADOS - 10)                  
+  IF #AUX GT #START                                
+    ADD 10 TO #START                               
+    ADD 10 TO #START1                              
+    ADD 10 TO #START2                              
+    ADD 10 TO #START3                              
+  END-IF                                           
+END-IF                                             
+IF *PF-KEY = 'PF9'                                 
+  FETCH 'GP1MP000'                                 
+END-IF                                             
+IF *PF-KEY = 'PF11'                                
+  FETCH 'GP1CP000'                                 
+END-IF                                             
+END-SUBROUTINE                                     
+DEFINE SUBROUTINE CHECKID                          
+IF (#ID GT 0) AND (#ID LT (#TOTALRESULTADOS+1))    
+  CALLNAT 'GP1CP002' #LISTA-ISN(#ID)               
+  RESET #ID                                        
+END-IF                                             
+END-SUBROUTINE                                     
+DEFINE SUBROUTINE PF12ROT                          
+CALL 'logoff'                                      
+END-SUBROUTINE                                     
+END                                                  
 ##################################################################################################   
  GP1CP002 - subprograma para mostrar um resultado - OK
 ##################################################################################################                              
