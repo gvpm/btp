@@ -1,0 +1,57 @@
+DEFINE DATA                                        
+LOCAL USING GUILEMP0                               
+LOCAL                                              
+1 #I (P7)                                          
+1 #ISN (P7)                                        
+******************************************         
+1 #DATA-A (A8)                                     
+1 #DATA-N(N8)                                      
+1 #DATA-D(D)                                       
+******************************************         
+1 #ARRAY (A20)                                     
+1 REDEFINE #ARRAY                                  
+  2 #CHAR (A1/1:20)                                
+******************************************         
+END-DEFINE                                         
+******************************************         
+*                                                  
+* FIND E GET                                       
+*                                                  
+******************************************         
+R1. FIND(1) EMP WITH PERSONNEL-ID = '043657'       
+  DISPLAY NAME PERSONNEL-ID                        
+  #ISN := *ISN                                     
+END-FIND                                           
+GET EMP #ISN                                       
+WRITE EMP                                          
+******************************************         
+*                                                  
+* DATAS                                            
+*                                                  
+******************************************         
+MOVE EDITED BIRTH (EM=YYYYMMDD) TO #DATA-A         
+WRITE #DATA-A                                      
+#DATA-N := VAL(#DATA-A)                            
+WRITE #DATA-N                                      
+MOVE #DATA-N TO #DATA-A                            
+ASSIGN #DATA-D = VAL(#DATA-A)                      
+WRITE #DATA-D                                      
+******************************************         
+*                                             
+* ALPHA PARA ARRRAY CHECK COM MASK            
+*                                             
+******************************************    
+MOVE ALL 'A' TO #ARRAY                        
+INPUT(AD=M) 'ENTRE COM A PALAVRA' #ARRAY      
+WRITE #ARRAY                                  
+FOR #I=1 20                                   
+  IF #CHAR(#I) NE MASK(A)                     
+    WRITE 'DEURUIM'                           
+  END-IF                                      
+END-FOR                                       
+******************************************    
+*                                             
+*                                             
+*                                             
+******************************************    
+END                                           
