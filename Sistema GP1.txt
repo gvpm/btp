@@ -1,0 +1,319 @@
+##################################################################################################   
+GP1MP000 - programa do menu  
+################################################################################################## 
+DEFINE DATA LOCAL                           
+1 #PROGRAMA (A8) INIT<*PROGRAM>             
+1 #CODIGO (A40)                             
+1 #CONTADOR(P5)                             
+END-DEFINE                                  
+*                                           
+SET KEY ALL                                 
+INPUT USING MAP 'GP1MM000'                  
+PERFORM CHECKPF                             
+PERFORM CHECKOPCAO                          
+*                                           
+DEFINE SUBROUTINE CHECKOPCAO                
+DECIDE ON FIRST VALUE OF #CODIGO            
+  VALUE '1'                                 
+    FETCH 'GP1IP000'                        
+  VALUE '2'                                 
+    FETCH 'GP1AP000'                        
+  VALUE '3'                                 
+    FETCH 'GP1CP000'                        
+  VALUE '4'                                 
+    FETCH 'GP1DP000'                        
+  VALUE '5'                                 
+    FETCH 'GP1RP000'                        
+  VALUE '.'                                 
+    FETCH 'MAN0PFT1'                        
+  NONE                                      
+    REINPUT ' Opcao Invalida' MARK *#CODIGO 
+END-DECIDE                                  
+END-SUBROUTINE                              
+*                                           
+DEFINE SUBROUTINE CHECKPF                   
+IF *PF-KEY = 'PF1'                          
+  REINPUT ' HELP NAO DISPONIVEL'            
+END-IF                                      
+IF *PF-KEY = 'PF3'                          
+  FETCH 'MAN0PFT1'                          
+END-IF                                      
+IF *PF-KEY = 'PF7'                          
+  REINPUT ' PF Nao Habilitada'              
+    FETCH 'GP1CP000'                           
+  VALUE '4'                                    
+    FETCH 'GP1DP000'                           
+  VALUE '5'                                    
+    FETCH 'GP1RP000'                           
+  VALUE '.'                                    
+    FETCH 'MAN0PFT1'                           
+  NONE                                         
+    REINPUT ' Opcao Invalida' MARK *#CODIGO    
+END-DECIDE                                     
+END-SUBROUTINE                                 
+*                                              
+DEFINE SUBROUTINE CHECKPF                      
+IF *PF-KEY = 'PF1'                             
+  REINPUT ' HELP NAO DISPONIVEL'               
+END-IF                                         
+IF *PF-KEY = 'PF3'                             
+  FETCH 'MAN0PFT1'                             
+END-IF                                         
+IF *PF-KEY = 'PF7'                             
+  REINPUT ' PF Nao Habilitada'                 
+END-IF                                         
+IF *PF-KEY = 'PF8'                             
+  REINPUT ' PF Nao Habilitada'                 
+END-IF                                         
+IF *PF-KEY = 'PF9'                             
+  REINPUT ' PF Nao Habilitada'                 
+END-IF                                         
+IF *PF-KEY = 'PF11'                            
+  REINPUT ' PF Nao Habilitada'                 
+END-IF                                         
+IF *PF-KEY = 'PF5'                             
+  REINPUT ' PF NAO HABILITADA'                 
+END-IF                                         
+IF *PF-KEY = 'PF12'                            
+  CALL 'LOGOFF'                                
+END-IF                                         
+END-SUBROUTINE                                 
+END                                             
+
+##################################################################################################   
+GP1IP000 - programa da inclusao - FEITO
+################################################################################################## 
+DEFINE DATA                        
+LOCAL USING GP1LEMP0               
+LOCAL                              
+1 #PROGRAMA (A8) INIT<*PROGRAM>    
+1 #OPCAO (A1)                      
+1 #AREA-CODE (A8)                  
+1 REDEFINE #AREA-CODE              
+  2 #CODPAIS (A3)                  
+  2 #CODAREA (A3)                  
+1 #NASCIMENTO (A10)                
+1 REDEFINE #NASCIMENTO             
+  2 #DIA(A2)                       
+  2 FILLER 1X                      
+  2 #MES (A2)                      
+  2 FILLER 1X                      
+  2 #ANO (A4)                      
+1 #NASCIMENTO-N (N8)               
+1 REDEFINE #NASCIMENTO-N           
+  2 #DIA-N (N2)                    
+  2 #MES-N (N2)                    
+  2 #ANO-N (N4)                    
+1 #BIRTH (A8)                      
+END-DEFINE                         
+*                                  
+DEFINE WINDOW WIN                  
+  SIZE AUTO                        
+  BASE 10/20                       
+  TITLE 'PERGUNTA'                 
+  CONTROL WINDOW                   
+  FRAMED ON                        
+*                                  
+DEFINE WINDOW WIN2                 
+  SIZE AUTO                        
+  BASE 10/20                       
+  TITLE 'USUARIO INSERIDO'         
+  CONTROL WINDOW                   
+  FRAMED ON                        
+*                                  
+*                                  
+*                                                                    
+SET KEY ALL                                                          
+REPEAT                                                               
+  INPUT USING MAP 'GP1IM000'                                         
+  PERFORM CHECKPF                                                    
+  PERFORM CONSISTEMP                                                 
+  COMPRESS #ANO #MES #DIA INTO #BIRTH LEAVING NO SPACE               
+  ASSIGN BIRTH = VAL(#BIRTH)                                         
+  MOVE #AREA-CODE TO AREA-CODE                                       
+* COMPRESS #CODPAIS #CODAREA INTO AREA-CODE LEAVING NO SPACE         
+*                                                                    
+  INPUT WINDOW = 'WIN' USING MAP 'GP1IM012'                          
+  DECIDE ON FIRST VALUE OF #OPCAO                                    
+    VALUE 'N'                                                        
+      FETCH 'GP1IP000'                                               
+    VALUE 'S'                                                        
+      STORE EMP                                                      
+      END TRANSACTION                                                
+    NONE                                                             
+      REINPUT ' Opcao Invalida' MARK *#OPCAO                         
+  END-DECIDE                                                         
+*                                                                    
+*                                                                    
+*                                                                    
+*                                                                    
+  INPUT WINDOW = 'WIN2' USING MAP 'GP1IM011'                         
+  DECIDE ON FIRST VALUE OF #OPCAO                                    
+    VALUE 'S'                                                        
+      CALLNAT 'GP1IP001' PERSONNEL-ID FIRST-NAME                     
+    VALUE 'N'                                                        
+      FETCH 'GP1IP000'                                               
+    NONE                                                             
+      REINPUT ' Opcao Invalida' MARK *#OPCAO                         
+  END-DECIDE                                                         
+END-REPEAT                                                           
+*                                                                    
+DEFINE SUBROUTINE CONSISTEMP                                         
+IF PERSONNEL-ID NE MASK(N8)                                          
+  REINPUT 'Codigo deve ser numerico de tamanho 8' MARK *PERSONNEL-ID 
+END-IF                                                              
+*                                                                   
+R1. FIND NUMBER EMP WITH PERSONNEL-ID = PERSONNEL-ID                
+IF *NUMBER(R1.) GT 0                                                
+  REINPUT ' Este Codigo ja existe no banco' MARK *PERSONNEL-ID      
+END-IF                                                              
+*                                                                   
+IF FIRST-NAME EQ ' '                                                
+  REINPUT ' Campo nao pode ser vazio' MARK *FIRST-NAME              
+END-IF                                                              
+*                                                                   
+IF NAME EQ ' '                                                      
+  REINPUT ' Campo nao pode ser vazio' MARK *NAME                    
+END-IF                                                              
+*                                                                   
+IF (SEX NE 'F') AND (SEX NE 'M')                                    
+  REINPUT ' Campo deve ser M ou F' MARK *SEX                        
+END-IF                                                              
+IF #NASCIMENTO NE MASK(NN'/'NN'/'NNNN)                              
+  REINPUT ' Data Invalida Modelo DD/MM/AAAA' MARK *#NASCIMENTO      
+END-IF                                                              
+ASSIGN #DIA-N = VAL(#DIA)                                           
+ASSIGN #MES-N = VAL(#MES)                                           
+ASSIGN #ANO-N = VAL(#ANO)                                           
+IF (#DIA-N GT 31) OR (#DIA-N LT 1)                                  
+  REINPUT ' Dia Invalido' MARK *#NASCIMENTO                         
+END-IF                                                              
+IF (#MES-N GT 12) OR (#MES-N LT 1)                                  
+  REINPUT ' Mes Invalido' MARK *#NASCIMENTO                         
+END-IF                                                              
+IF (#MES-N EQ 2) AND (#DIA-N GT 29)                                 
+  REINPUT ' Dia Invalido para o Mes de Fevereiro' MARK *#NASCIMENTO 
+END-IF                                                              
+*                                                                   
+IF ADDRESS-LINE(1) EQ ' '                                           
+  REINPUT ' Campo nao pode ser vazio' MARK *ADDRESS-LINE(1)         
+END-IF                                                              
+*                                                                   
+IF CITY EQ ' '                                                      
+  REINPUT ' Campo nao pode ser vazio' MARK *CITY                        
+END-IF                                                                  
+*                                                                       
+IF POST-CODE NE MASK(NNNNN'-'NNN)                                       
+  REINPUT ' CEP Invalido. Modelo- NNNNN-NNN ex:24210-520'MARK *POST-CODE
+END-IF                                                                  
+*                                                                       
+IF COUNTRY EQ ' '                                                       
+  REINPUT ' Campo nao pode ser vazio' MARK *COUNTRY                     
+END-IF                                                                  
+*                                                                       
+IF #CODPAIS NE MASK('+'NN)                                              
+  REINPUT ' Codigo Invalido - Modelo +NN ex:(+55)' MARK *#CODPAIS       
+END-IF                                                                  
+*                                                                       
+IF #CODAREA NE MASK(NNN)                                                
+  REINPUT ' Codigo Invalido - Modelo NNN ex:(021)' MARK *#CODAREA       
+END-IF                                                                  
+*                                                                       
+IF PHONE EQ ' '                                                         
+  REINPUT ' Campo nao pode ser vazio' MARK *PHONE                       
+END-IF                                                                  
+*                                                                       
+IF DEPT EQ ' '                                                          
+  REINPUT ' Campo nao pode ser vazio' MARK *DEPT                        
+END-IF                                                                  
+*                                                                       
+IF JOB-TITLE EQ ' '                                                     
+  REINPUT ' Campo nao pode ser vazio' MARK *JOB-TITLE                   
+END-IF                                                                  
+*                                                                       
+IF SALARY(1) LT 1                                                       
+  REINPUT ' Salario deve ser maior que 0' MARK *SALARY(1)               
+END-IF                                                                  
+*                                                                       
+*                                                                       
+END-SUBROUTINE                                                          
+*                                                                       
+DEFINE SUBROUTINE PF12ROT                                               
+*                                
+*                                
+END-SUBROUTINE                   
+*                                
+DEFINE SUBROUTINE PF12ROT        
+CALL 'LOGOFF'                    
+END-SUBROUTINE                   
+*                                
+DEFINE SUBROUTINE CHECKPF        
+IF *PF-KEY = 'PF1'               
+  REINPUT 'Help nao disponivel'  
+END-IF                           
+IF *PF-KEY = 'PF3'               
+  FETCH 'MAN0PFT1'               
+END-IF                           
+IF *PF-KEY = 'PF12'              
+  PERFORM PF12ROT                
+END-IF                           
+IF *PF-KEY = 'PF7'               
+  REINPUT ' PF Nao Habilitada'   
+END-IF                           
+IF *PF-KEY = 'PF8'               
+  REINPUT ' PF Nao Habilitada'   
+END-IF                           
+IF *PF-KEY = 'PF9'               
+  FETCH 'GP1MP000'               
+END-IF                           
+IF *PF-KEY = 'PF11'              
+  REINPUT ' PF Nao Habilitada'   
+END-IF                           
+IF *PF-KEY = 'PF2'               
+  REINPUT ' PF Nao Habilitada'   
+END-IF                           
+IF *PF-KEY = 'PF4'               
+  REINPUT ' PF Nao Habilitada'   
+END-IF                           
+END-SUBROUTINE                   
+*                                
+END   
+##################################################################################################   
+GP1IP001 - subprograma de inclusao de carro - OK
+################################################################################################## 
+##################################################################################################   
+ GP1AP000 - programa da alteracao - OK
+################################################################################################## 
+##################################################################################################   
+ GP1AP001 - Subprograma de Alteracao - OK
+################################################################################################## 
+##################################################################################################   
+ GP1AP002 - Subprograma de Alteracao VEICULO - OK
+################################################################################################## 
+##################################################################################################   
+ GP1CP000 - programa da consulta - OK
+################################################################################################## 
+##################################################################################################   
+ GP1CP001 - subprograma dos reusultados da consulta - OK
+################################################################################################## 
+##################################################################################################   
+ GP1CP002 - subprograma para mostrar um resultado - OK
+##################################################################################################                              
+##################################################################################################   
+GP1DP000 - Programa de Delecao - Entrada de dado - OK
+################################################################################################## 
+##################################################################################################   
+GP1DP001 - Programa de Delecao com FIND, deletando também o carro 
+################################################################################################## 
+##################################################################################################   
+GP1RP000 - programa do relatorio - OK 
+################################################################################################## 
+##################################################################################################   
+GP1RP001 - Subprograma do Relatorio por nome - OK
+################################################################################################## 
+##################################################################################################   
+GP1RP002 - Subprograma do Relatorio por cargo - OK
+################################################################################################## 
+##################################################################################################   
+GP1RP003 - Subprograma do Relatorio por Dept - OK
+################################################################################################## 
