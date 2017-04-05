@@ -20,3 +20,4 @@ IF  *PF-KEY NE 'PF8' AND *PF-KEY NE 'PF9' AND
 END-IF                                                           
 END-SUBROUTINE                                                   
 end
+* EXAMINE FULL #CAMPOA FOR ' ' GIVING LENGTH #J 
