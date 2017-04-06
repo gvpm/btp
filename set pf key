@@ -1,0 +1,23 @@
+define data local
+end-define
+SET KEY ALL 
+PERFORM VERIFICAR-PF
+*                                                                
+DEFINE SUBROUTINE VERIFICAR-PF                                   
+SET KEY PF1=HELP                                                 
+IF *PF-KEY = 'PF3'                                               
+  FETCH 'MAN0PFT1'                                               
+END-IF                                                           
+IF *PF-KEY = 'PF9'                                               
+  FETCH 'GP3PM001'                                               
+END-IF                                                           
+IF *PF-KEY = 'PF11'                                              
+  FETCH 'GP3PM001'                                               
+END-IF                                                           
+IF  *PF-KEY NE 'PF8' AND *PF-KEY NE 'PF9' AND                    
+    *PF-KEY NE 'PF11' AND *PF-KEY NE 'PF7' AND *PF-KEY NE 'ENTR' 
+  DISPLAY 'INFORME UMA PK VALIDA'                                
+END-IF                                                           
+END-SUBROUTINE                                                   
+end
+* EXAMINE FULL #CAMPOA FOR ' ' GIVING LENGTH #J 

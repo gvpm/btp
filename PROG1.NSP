@@ -1,0 +1,15 @@
+0010* Prog1
+0020Define data local
+00301 emp view of employees
+0040  2 PERSONNEL-ID
+0050  2 name
+0060  2 first-name
+0070  2 middle-name
+0080end-define
+0090find emp with name = 'ADKINSON' or name ='ALEXANDER'
+0100  display PERSONNEL-ID first-name name  middle-name
+0110end-find
+0120* Não foi pedido
+0130FIND NUMBER EMP with name = 'ADKINSON' or name ='ALEXANDER'
+0140WRITE *NUMBER
+0150end
